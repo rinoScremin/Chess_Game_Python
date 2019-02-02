@@ -2,7 +2,7 @@ This is a chess game i have been making in Python on my free time. You enter the
 
 The purpose of this project was to learn more about AI. 
 
-                                                    thing im still workin on are 
+                                                   still working on
                                                     
 1) right now there is no concept of check or check mate in the game.
 2) no Castling
