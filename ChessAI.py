@@ -417,6 +417,48 @@ class chessGameAI:
 
 
 
+
+			
+				
+		
+
+#chessBoard = [[["r2",0],["sp",0],["b2",0],["q2",0],["k2",0],["b2",0],["sp",0],["r2",0]],
+#	[["p2",1],["p2",1],["p2",1],["p2",1],["p2",1],["p2",1],["p2",1],["p2",1]],
+#	[["sp",0],["sp",0],["n2",0],["sp",0],["sp",0],["sp",0],["sp",0],["sp",0]],
+#	[["sp",0],["sp",0],["sp",0],["p1",0],["sp",0],["sp",0],["sp",0],["sp",0]],
+#	[["sp",0],["sp",0],["sp",0],["sp",0],["sp",0],["sp",0],["sp",0],["sp",0]],
+#	[["sp",0],["n2",0],["p1",0],["sp",0],["sp",0],["sp",0],["sp",0],["sp",0]],
+#	[["p1",1],["p1",1],["sp",1],["sp",1],["p1",1],["p1",1],["p1",1],["p1",1]],
+#	[["r1",0],["n1",0],["b1",0],["q1",0],["k1",0],["b1",0],["n1",0],["r1",0]]];		
+			
+
+#test = chessGameAI();
+#test.AIgame.chessBoard = chessBoard;
+#print(test.PositionEvaluation());
+
+#test.AIgame.chessBoard = chessBoard;
+#i=0;
+#for moves in test.generateBoards("black"):
+#	i=i+1;
+#	print(moves[3][0], "list # : " ,i);
+#	test.AIgame.chessBoard = moves[0];
+#	test.AIgame.printBoard();
+
+
+#print(test.minimax(chessBoard,2,-9999,9999,False));
+#test.AIgame.printBoard();
+
+#print(test.minimax(test.AIgame.chessBoard,1,-9999,9999,False));
+#test.AIgame.printBoard();
+
+
+
+
+#print(test.generateBoards("black")[6]);
+#test.test(3, True);
+#print(test.calculateBestMove());
+#print(test.generateMovesBlack());
+
 def _evaluate_root_move(args):
 	board, move, depth, minimizing = args;
 	ai = chessGameAI();
