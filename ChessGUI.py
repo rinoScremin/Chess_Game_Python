@@ -5,11 +5,10 @@ from ChessAI import chessGameAI
 from random import randint
 
 class ChessGame(arcade.Window):
+	def __init__(self, width, height, difficulty_level=2):
+		super().__init__(width, height, "Chess Game");
 
-	difficultyLevel = input("Enter The Difficulty Level: ");
-	
-	def __init__(self, width, height):
-		super().__init__(width, height);
+		self.difficulty_level = self._parse_difficulty(difficulty_level);
 
 		self.ChessGameLogic = chessGameRules();
 
@@ -36,11 +35,11 @@ class ChessGame(arcade.Window):
 
 		self.mouse_current_state = False;
 
-		self.CurrentPieceCoordinance = None;
-		self.SelectedPieceCoordinance = None;
+		self.CurrentPieceCoordinate = None;
+		self.SelectedPieceCoordinate = None;
 	
-		self.BlackPieceCoordinance = None;
-		self.WhitePieceCoordinance = None;
+		self.BlackPieceCoordinate = None;
+		self.WhitePieceCoordinate = None;
 
 		self.PawnFirstMove = [True,True,True,True,True,True,True,True];
 		self.b_PawnFirstMove = [True,True,True,True,True,True,True,True];
@@ -68,6 +67,16 @@ class ChessGame(arcade.Window):
 		
 		self.playersTurn = "white"; 
 		
+	@staticmethod
+	def _parse_difficulty(value):
+		try:
+			level = int(value);
+		except (TypeError, ValueError):
+			return 2;
+		if level < 1:
+			return 1;
+		return level;
+
 	def setup(self):
 		
 		file_path = os.path.dirname(os.path.abspath(__file__));
@@ -75,46 +84,35 @@ class ChessGame(arcade.Window):
 
 		self.chessPieces_scaling = 1;
 	
-		self.backGround = arcade.load_texture("chess_board_img.jpg");
+		self.background_list = arcade.SpriteList();
+		background_sprite = arcade.Sprite("chess_board_img.jpg");
+		background_sprite.scale = 600 / background_sprite.width;
+		background_sprite.center_x = 300;
+		background_sprite.center_y = 300;
+		self.background_list.append(background_sprite);
 
 		self.King_list = arcade.SpriteList();
 		King = arcade.Sprite("King_img.jpg",self.chessPieces_scaling);
 		King.center_x = 335;
 		King.center_y = 35;
-		King.boundary_left = King.center_x-(King.width/2); 
-		King.boundary_right = King.center_x+(King.width/2);
-		King.boundary_top = King.center_y+(King.height/2);
-		King.boundary_bottom = King.center_y-(King.height/2);
 		self.King_list.append(King);
 
 		self.B_King_list = arcade.SpriteList();
 		B_King = arcade.Sprite("B_King_img.jpg",self.chessPieces_scaling);
 		B_King.center_x = 335;
 		B_King.center_y = 560;
-		B_King.boundary_left = B_King.center_x-(B_King.width/2); 
-		B_King.boundary_right = B_King.center_x+(B_King.width/2);
-		B_King.boundary_top = B_King.center_y+(B_King.height/2);
-		B_King.boundary_bottom = B_King.center_y-(B_King.height/2);
 		self.B_King_list.append(B_King);
 
 		self.Queen_list = arcade.SpriteList();	
 		Queen = arcade.Sprite("Queen_img.jpg",self.chessPieces_scaling);
 		Queen.center_x = 260;
 		Queen.center_y = 35;
-		Queen.boundary_left = Queen.center_x-(Queen.width/2); 
-		Queen.boundary_right = Queen.center_x+(Queen.width/2);
-		Queen.boundary_top = Queen.center_y+(Queen.height/2);
-		Queen.boundary_bottom = Queen.center_y-(Queen.height/2);
 		self.Queen_list.append(Queen);
 
 		self.B_Queen_list = arcade.SpriteList();	
 		B_Queen = arcade.Sprite("B_Queen_img.jpg",self.chessPieces_scaling);
 		B_Queen.center_x = 260;
 		B_Queen.center_y = 560;
-		B_Queen.boundary_left = B_Queen.center_x-(B_Queen.width/2); 
-		B_Queen.boundary_right = B_Queen.center_x+(B_Queen.width/2);
-		B_Queen.boundary_top = B_Queen.center_y+(B_Queen.height/2);
-		B_Queen.boundary_bottom = B_Queen.center_y-(B_Queen.height/2);
 		self.B_Queen_list.append(B_Queen);
 		
 		self.Pawn_list = arcade.SpriteList();
@@ -124,10 +122,6 @@ class ChessGame(arcade.Window):
 			Pawn = arcade.Sprite("Pawn_img.jpg",self.chessPieces_scaling);
 			Pawn.center_x = pawnPosition;
 			Pawn.center_y = 110;
-			Pawn.boundary_left = Pawn.center_x - (Pawn.width/2); 
-			Pawn.boundary_right = Pawn.center_x + (Pawn.width/2);
-			Pawn.boundary_top = Pawn.center_y + (Pawn.height/2);
-			Pawn.boundary_bottom = Pawn.center_y - (Pawn.height/2);
 			self.Pawn_list.append(Pawn);
 			pawnPosition = pawnPosition + 75;
 
@@ -137,10 +131,6 @@ class ChessGame(arcade.Window):
 			Pawn = arcade.Sprite("B_Pawn_img.jpg",self.chessPieces_scaling);
 			Pawn.center_x = B_pawnPosition;
 			Pawn.center_y = 485;
-			Pawn.boundary_left = Pawn.center_x - (Pawn.width/2); 
-			Pawn.boundary_right = Pawn.center_x + (Pawn.width/2);
-			Pawn.boundary_top = Pawn.center_y + (Pawn.height/2);
-			Pawn.boundary_bottom = Pawn.center_y - (Pawn.height/2);
 			self.B_Pawn_list.append(Pawn);
 			B_pawnPosition = B_pawnPosition + 75;
 
@@ -151,10 +141,6 @@ class ChessGame(arcade.Window):
 			Rook = arcade.Sprite("Rook_img.jpg",self.chessPieces_scaling);
 			Rook.center_x = RookPosition;
 			Rook.center_y = 35;
-			Rook.boundary_left = Rook.center_x - (Rook.width/2); 
-			Rook.boundary_right = Rook.center_x + (Rook.width/2);
-			Rook.boundary_top = Rook.center_y + (Rook.height/2);
-			Rook.boundary_bottom = Rook.center_y - (Rook.height/2);
 			self.Rook_list.append(Rook);
 			RookPosition = RookPosition + 525;
 
@@ -165,10 +151,6 @@ class ChessGame(arcade.Window):
 			Rook = arcade.Sprite("B_Rook_img.jpg",self.chessPieces_scaling);
 			Rook.center_x = B_RookPosition;
 			Rook.center_y = 560;
-			Rook.boundary_left = Rook.center_x - (Rook.width/2); 
-			Rook.boundary_right = Rook.center_x + (Rook.width/2);
-			Rook.boundary_top = Rook.center_y + (Rook.height/2);
-			Rook.boundary_bottom = Rook.center_y - (Rook.height/2);
 			self.B_Rook_list.append(Rook);
 			B_RookPosition = B_RookPosition + 525;
 
@@ -179,10 +161,6 @@ class ChessGame(arcade.Window):
 			Knight = arcade.Sprite("Knight_img.jpg",self.chessPieces_scaling);
 			Knight.center_x = KnightPosition;
 			Knight.center_y = 35;
-			Knight.boundary_left = Knight.center_x - (Knight.width/2); 
-			Knight.boundary_right = Knight.center_x + (Knight.width/2);
-			Knight.boundary_top = Knight.center_y + (Knight.height/2);
-			Knight.boundary_bottom = Knight.center_y - (Knight.height/2);
 			self.Knight_list.append(Knight);
 			KnightPosition = KnightPosition + 375;
 
@@ -193,10 +171,6 @@ class ChessGame(arcade.Window):
 			Knight = arcade.Sprite("B_Knight_img.jpg",self.chessPieces_scaling);
 			Knight.center_x = B_KnightPosition;
 			Knight.center_y = 560;
-			Knight.boundary_left = Knight.center_x - (Knight.width/2); 
-			Knight.boundary_right = Knight.center_x + (Knight.width/2);
-			Knight.boundary_top = Knight.center_y + (Knight.height/2);
-			Knight.boundary_bottom = Knight.center_y - (Knight.height/2);
 			self.B_Knight_list.append(Knight);
 			B_KnightPosition = B_KnightPosition + 375;
 		
@@ -207,10 +181,6 @@ class ChessGame(arcade.Window):
 			Bishop = arcade.Sprite("Bishop_img.jpg",self.chessPieces_scaling);
 			Bishop.center_x = BishopPosition;
 			Bishop.center_y = 35;
-			Bishop.boundary_left = Bishop.center_x - (Bishop.width/2); 
-			Bishop.boundary_right = Bishop.center_x + (Bishop.width/2);
-			Bishop.boundary_top = Bishop.center_y + (Bishop.height/2);
-			Bishop.boundary_bottom = Bishop.center_y - (Bishop.height/2);
 			self.Bishop_list.append(Bishop);
 			BishopPosition = BishopPosition + 225;
 
@@ -221,17 +191,13 @@ class ChessGame(arcade.Window):
 			Bishop = arcade.Sprite("B_Bishop_img.jpg",self.chessPieces_scaling);
 			Bishop.center_x = B_BishopPosition;
 			Bishop.center_y = 560;
-			Bishop.boundary_left = Bishop.center_x - (Bishop.width/2); 
-			Bishop.boundary_right = Bishop.center_x + (Bishop.width/2);
-			Bishop.boundary_top = Bishop.center_y + (Bishop.height/2);
-			Bishop.boundary_bottom = Bishop.center_y - (Bishop.height/2);
 			self.B_Bishop_list.append(Bishop);
 			B_BishopPosition = B_BishopPosition + 225;
 		pass
 
 	def on_draw(self):
-		arcade.start_render();
-		arcade.draw_texture_rectangle(300, 300, 600, 600, self.backGround);
+		self.clear();
+		self.background_list.draw();
 		self.Rook_list.draw();
 		self.Knight_list.draw();
 		self.Bishop_list.draw();
@@ -246,83 +212,10 @@ class ChessGame(arcade.Window):
 		self.Queen_list.draw();
 
 	def update(self, delta_time):
-		for King in self.B_King_list:
-			King.boundary_left = King.center_x-(King.width/2); 
-			King.boundary_right = King.center_x+(King.width/2);
-			King.boundary_top = King.center_y+(King.height/2);
-			King.boundary_bottom = King.center_y-(King.height/2);
-			King.update();
-		
-		for King in self.King_list:
-			King.boundary_left = King.center_x-(King.width/2); 
-			King.boundary_right = King.center_x+(King.width/2);
-			King.boundary_top = King.center_y+(King.height/2);
-			King.boundary_bottom = King.center_y-(King.height/2);
-			King.update();
-
-		for Queen in self.B_Queen_list: 
-			Queen.boundary_left = Queen.center_x-(Queen.width/2); 
-			Queen.boundary_right = Queen.center_x+(Queen.width/2);
-			Queen.boundary_top = Queen.center_y+(Queen.height/2);
-			Queen.boundary_bottom = Queen.center_y-(Queen.height/2);
-			Queen.update();
-		
-		for Queen in self.Queen_list: 
-			Queen.boundary_left = Queen.center_x-(Queen.width/2); 
-			Queen.boundary_right = Queen.center_x+(Queen.width/2);
-			Queen.boundary_top = Queen.center_y+(Queen.height/2);
-			Queen.boundary_bottom = Queen.center_y-(Queen.height/2);
-			Queen.update();
-
-		for Rook in self.Rook_list: 
-			Rook.boundary_left = Rook.center_x-(Rook.width/2); 
-			Rook.boundary_right = Rook.center_x+(Rook.width/2);
-			Rook.boundary_top = Rook.center_y+(Rook.height/2);
-			Rook.boundary_bottom = Rook.center_y-(Rook.height/2);
-
-		for Rook in self.B_Rook_list: 
-			Rook.boundary_left = Rook.center_x-(Rook.width/2); 
-			Rook.boundary_right = Rook.center_x+(Rook.width/2);
-			Rook.boundary_top = Rook.center_y+(Rook.height/2);
-			Rook.boundary_bottom = Rook.center_y-(Rook.height/2);
-
-		for Knight in self.Knight_list: 
-			Knight.boundary_left = Knight.center_x-(Knight.width/2); 
-			Knight.boundary_right = Knight.center_x+(Knight.width/2);
-			Knight.boundary_top = Knight.center_y+(Knight.height/2);
-			Knight.boundary_bottom = Knight.center_y-(Knight.height/2);
-
-		for Knight in self.B_Knight_list: 
-			Knight.boundary_left = Knight.center_x-(Knight.width/2); 
-			Knight.boundary_right = Knight.center_x+(Knight.width/2);
-			Knight.boundary_top = Knight.center_y+(Knight.height/2);
-			Knight.boundary_bottom = Knight.center_y-(Knight.height/2);
-
-		for Bishop in self.Bishop_list: 
-			Bishop.boundary_left = Bishop.center_x-(Bishop.width/2); 
-			Bishop.boundary_right = Bishop.center_x+(Bishop.width/2);
-			Bishop.boundary_top = Bishop.center_y+(Bishop.height/2);
-			Bishop.boundary_bottom = Bishop.center_y-(Bishop.height/2);
-
-		for Bishop in self.B_Bishop_list: 
-			Bishop.boundary_left = Bishop.center_x-(Bishop.width/2); 
-			Bishop.boundary_right = Bishop.center_x+(Bishop.width/2);
-			Bishop.boundary_top = Bishop.center_y+(Bishop.height/2);
-			Bishop.boundary_bottom = Bishop.center_y-(Bishop.height/2);
-
-		for Pawn in self.Pawn_list:        
-			Pawn.boundary_left = Pawn.center_x - (Pawn.width/2); 
-			Pawn.boundary_right = Pawn.center_x + (Pawn.width/2);
-			Pawn.boundary_top = Pawn.center_y + (Pawn.height/2);
-			Pawn.boundary_bottom = Pawn.center_y - (Pawn.height/2);
-
-		for Pawn in self.B_Pawn_list:        
-			Pawn.boundary_left = Pawn.center_x - (Pawn.width/2); 
-			Pawn.boundary_right = Pawn.center_x + (Pawn.width/2);
-			Pawn.boundary_top = Pawn.center_y + (Pawn.height/2);
-			Pawn.boundary_bottom = Pawn.center_y - (Pawn.height/2);
 		self.AIMakeMove();
-		pass
+
+	def on_update(self, delta_time):
+		self.update(delta_time);
 	
 	def on_mouse_press(self, x, y, button, modifiers):
 		self.mouse_current_state = True;
@@ -350,51 +243,76 @@ class ChessGame(arcade.Window):
 				self.MoveRook(x,y, self.Rook_list,self.Rook_Select_list);
 				self.MoveKing(x,y, self.King_list, self.King_Select_list);
 
+	def _clear_all_selections(self):
+		for i in range(len(self.King_Select_list)):
+			self.King_Select_list[i] = False;
+		for i in range(len(self.Queen_Select_list)):
+			self.Queen_Select_list[i] = False;
+		for i in range(len(self.Rook_Select_list)):
+			self.Rook_Select_list[i] = False;
+		for i in range(len(self.Knight_Select_list)):
+			self.Knight_Select_list[i] = False;
+		for i in range(len(self.Bishop_Select_list)):
+			self.Bishop_Select_list[i] = False;
+		for i in range(len(self.Pawn_Select_list)):
+			self.Pawn_Select_list[i] = False;
+
+	def _collides_with_other(self, sprite, sprite_list):
+		collisions = arcade.check_for_collision_with_list(sprite, sprite_list);
+		return any(other is not sprite for other in collisions);
+
 	def HitTestWhiteOnWhite(self, Piece_list):
 		for Piece in Piece_list:
-			if arcade.check_for_collision_with_list(Piece, self.Pawn_list) != []:
+			if self._collides_with_other(Piece, self.Pawn_list):
 				return True;
-			if arcade.check_for_collision_with_list(Piece, self.Knight_list) != []:
+			if self._collides_with_other(Piece, self.Knight_list):
 				return True;
-			if arcade.check_for_collision_with_list(Piece, self.Bishop_list) != []:
+			if self._collides_with_other(Piece, self.Bishop_list):
 				return True;
-			if arcade.check_for_collision_with_list(Piece, self.Rook_list) != []:
+			if self._collides_with_other(Piece, self.Rook_list):
 				return True;
-			if arcade.check_for_collision_with_list(Piece, self.King_list) != []:
+			if self._collides_with_other(Piece, self.King_list):
 				return True;
-			if arcade.check_for_collision_with_list(Piece, self.Queen_list) != []:
+			if self._collides_with_other(Piece, self.Queen_list):
 				return True;
 		return False;
 	def HitTestBlackOnBlack(self, Piece_list):
 		for Piece in Piece_list:
-			if arcade.check_for_collision_with_list(Piece, self.B_Pawn_list) != []:
+			if self._collides_with_other(Piece, self.B_Pawn_list):
 				return True;
-			if arcade.check_for_collision_with_list(Piece, self.B_Knight_list) != []:
+			if self._collides_with_other(Piece, self.B_Knight_list):
 				return True;
-			if arcade.check_for_collision_with_list(Piece, self.B_Bishop_list) != []:
+			if self._collides_with_other(Piece, self.B_Bishop_list):
 				return True;
-			if arcade.check_for_collision_with_list(Piece, self.B_Rook_list) != []:
+			if self._collides_with_other(Piece, self.B_Rook_list):
 				return True;
-			if arcade.check_for_collision_with_list(Piece, self.B_King_list) != []:
+			if self._collides_with_other(Piece, self.B_King_list):
 				return True;
-			if arcade.check_for_collision_with_list(Piece, self.B_Queen_list) != []:
+			if self._collides_with_other(Piece, self.B_Queen_list):
 				return True;
 		return False;
 
 	def AIMakeMove(self):
 			if self.playersTurn == "black":
-				temp = self.chessAI.minimax(self.ChessGameLogic.chessBoard, int(self.difficultyLevel), -9999, 9999, False);
-				chessPiecesCoordinance = [temp[0][0],temp[0][1]];
-				chessPiecesBoardPostion = self.CoordinanceToBoardPostion(chessPiecesCoordinance[0],chessPiecesCoordinance[1]);
-				chessPieces_x = chessPiecesBoardPostion[0];
-				chessPieces_y = chessPiecesBoardPostion[1];
-				newPostion = [temp[1][0],temp[1][1]];
-				moveChessPieces = self.CoordinanceToBoardPostion(newPostion[0],newPostion[1]);
+				print("AI turn (black). Difficulty:", self.difficulty_level);
+				temp = self.chessAI.search_best_move(self.ChessGameLogic.chessBoard, "black", self.difficulty_level, time_limit=1.0, use_multiprocessing=False);
+				if not temp:
+					print("minimax returned no move, falling back to calculateBestMove");
+					temp = self.chessAI.calculateBestMove("black");
+				if not temp:
+					print("AI has no legal moves.");
+					return;
+				chessPiecesCoordinate = [temp[0][0],temp[0][1]];
+				chessPiecesBoardPosition = self.CoordinateToBoardPosition(chessPiecesCoordinate[0],chessPiecesCoordinate[1]);
+				chessPieces_x = chessPiecesBoardPosition[0];
+				chessPieces_y = chessPiecesBoardPosition[1];
+				newPosition = [temp[1][0],temp[1][1]];
+				moveChessPieces = self.CoordinateToBoardPosition(newPosition[0],newPosition[1]);
 				x = moveChessPieces[0];
 				y = moveChessPieces[1];
-				Pieces=self.ChessGameLogic.returnChessPieces(chessPiecesCoordinance[0],chessPiecesCoordinance[1]);
-				self.ChessGameLogic.setChessPieces(newPostion[0],newPostion[1],Pieces);
-				self.ChessGameLogic.setChessPieces(chessPiecesCoordinance[0],chessPiecesCoordinance[1],"sp");
+				Pieces=self.ChessGameLogic.returnChessPieces(chessPiecesCoordinate[0],chessPiecesCoordinate[1]);
+				self.ChessGameLogic.setChessPieces(newPosition[0],newPosition[1],Pieces);
+				self.ChessGameLogic.setChessPieces(chessPiecesCoordinate[0],chessPiecesCoordinate[1],"sp");
 				for Pawn in self.B_Pawn_list:
 					if Pawn.center_x == chessPieces_x and Pawn.center_y == chessPieces_y:
 						Pawn.center_x = x;
@@ -475,22 +393,23 @@ class ChessGame(arcade.Window):
 		newSetUp = None;
 		goodMove = False;
 		for Pawn in Pawn_list: 
-			if x >= Pawn.boundary_left and x <= Pawn.boundary_right and y <= Pawn.boundary_top and y >= Pawn.boundary_bottom:
+			if Pawn.collides_with_point((x, y)):
 				if Pawn_Select_list[self.count] == False: #  and self.isAnyPieceSelected() == False and goodMove == False:
+					self._clear_all_selections();
 					Pawn_Select_list[self.count] = True;
-					self.CurrentPieceCoordinance = self.findCoordinance(x,y);
+					self.CurrentPieceCoordinate = self.findCoordinate(x,y);
 				else:
-					PossibleMovesPawn = self.ChessGameLogic.removeMovesThatWillPutYouInCheck(self.ChessGameLogic.findPossibleMovesPawn(self.CurrentPieceCoordinance,False),self.CurrentPieceCoordinance);	
+					PossibleMovesPawn = self.ChessGameLogic.removeMovesThatWillPutYouInCheck(self.ChessGameLogic.findPossibleMovesPawn(self.CurrentPieceCoordinate,False),self.CurrentPieceCoordinate);	
 					for Move in PossibleMovesPawn:
 						try:
-							if int(self.findCoordinance(x,y)[0]) == int(Move[0]) and int(self.findCoordinance(x,y)[1]) == int(Move[2]):
-								newPostion = self.CoordinanceToBoardPostion(int(Move[0]),int(Move[2]));
-								Pawn.center_x = newPostion[0];
-								Pawn.center_y = newPostion[1];
+							if int(self.findCoordinate(x,y)[0]) == int(Move[0]) and int(self.findCoordinate(x,y)[1]) == int(Move[2]):
+								newPosition = self.CoordinateToBoardPosition(int(Move[0]),int(Move[2]));
+								Pawn.center_x = newPosition[0];
+								Pawn.center_y = newPosition[1];
 								goodMove = True;
 								self.PawnFirstMove[PawnCounter] = False;
-								self.ChessGameLogic.setChessPieces(int(Move[0]),int(Move[2]),self.ChessGameLogic.returnChessPieces(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1]));
-								self.ChessGameLogic.setChessPieces(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1], "sp");
+								self.ChessGameLogic.setChessPieces(int(Move[0]),int(Move[2]),self.ChessGameLogic.returnChessPieces(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1]));
+								self.ChessGameLogic.setChessPieces(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1], "sp");
 								self.HitTestBlackOnWhite(Pawn);
 								self.PawnAtEndOfBoard();
 								self.changeTurn();
@@ -499,7 +418,7 @@ class ChessGame(arcade.Window):
 							None;
 					Pawn_Select_list[self.count] = False;
 				if goodMove == False:
-					resetMove = self.CoordinanceToBoardPostion(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1]);
+					resetMove = self.CoordinateToBoardPosition(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1]);
 					Pawn.center_x = resetMove[0];
 					Pawn.center_y = resetMove[1];
 			PawnCounter = PawnCounter+1;
@@ -509,33 +428,34 @@ class ChessGame(arcade.Window):
 	def MoveKnight(self,x,y,Knight_list,Knight_Select_list):
 		for Knight in Knight_list:
 			goodMove = False; 
-			if x >= Knight.boundary_left and x <= Knight.boundary_right and y <= Knight.boundary_top and y >= Knight.boundary_bottom:
+			if Knight.collides_with_point((x, y)):
 				if Knight_Select_list[self.count] == False:
+					self._clear_all_selections();
 					Knight_Select_list[self.count] = True;
-					self.CurrentPieceCoordinance = self.findCoordinance(x,y);
+					self.CurrentPieceCoordinate = self.findCoordinate(x,y);
 				else:
 					Knight_Select_list[self.count] = False;
-					PossibleMovesKnight = self.ChessGameLogic.removeMovesThatWillPutYouInCheck(self.ChessGameLogic.findPossibleMovesKnight(self.CurrentPieceCoordinance),self.CurrentPieceCoordinance);
+					PossibleMovesKnight = self.ChessGameLogic.removeMovesThatWillPutYouInCheck(self.ChessGameLogic.findPossibleMovesKnight(self.CurrentPieceCoordinate),self.CurrentPieceCoordinate);
 					for Move in PossibleMovesKnight:
 						try:
-							NextX = int(self.findCoordinance(x,y)[0]);
-							NextY = int(self.findCoordinance(x,y)[1]);
+							NextX = int(self.findCoordinate(x,y)[0]);
+							NextY = int(self.findCoordinate(x,y)[1]);
 							m0 = int(Move[0]);
 							m1 = int(Move[2]);
 							if NextX == m0 and NextY == m1:
-								newPostion = self.CoordinanceToBoardPostion(m0,m1);
-								Knight.center_x = newPostion[0];
-								Knight.center_y = newPostion[1];
+								newPosition = self.CoordinateToBoardPosition(m0,m1);
+								Knight.center_x = newPosition[0];
+								Knight.center_y = newPosition[1];
 								goodMove = True;
-								self.ChessGameLogic.setChessPieces(m0,m1,self.ChessGameLogic.returnChessPieces(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1]));
-								self.ChessGameLogic.setChessPieces(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1], "sp");
+								self.ChessGameLogic.setChessPieces(m0,m1,self.ChessGameLogic.returnChessPieces(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1]));
+								self.ChessGameLogic.setChessPieces(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1], "sp");
 								self.ChessGameLogic.printBoard();
 								self.HitTestBlackOnWhite(Knight);
 								self.changeTurn();
 						except:
 							None;		
 				if goodMove == False:
-					resetMove = self.CoordinanceToBoardPostion(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1]);
+					resetMove = self.CoordinateToBoardPosition(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1]);
 					Knight.center_x = resetMove[0];
 					Knight.center_y = resetMove[1];
 			self.count = self.count+1;
@@ -544,33 +464,34 @@ class ChessGame(arcade.Window):
 	def MoveBishop(self,x,y,Bishop_list,Bishop_Select_list):
 		for Bishop in Bishop_list:
 			goodMove = False; 
-			if x >= Bishop.boundary_left and x <= Bishop.boundary_right and y <= Bishop.boundary_top and y >= Bishop.boundary_bottom:
+			if Bishop.collides_with_point((x, y)):
 				if Bishop_Select_list[self.count] == False:
+					self._clear_all_selections();
 					Bishop_Select_list[self.count] = True;
-					self.CurrentPieceCoordinance = self.findCoordinance(x,y);
+					self.CurrentPieceCoordinate = self.findCoordinate(x,y);
 				else:
 					Bishop_Select_list[self.count] = False;
-					PossibleMovesBishop = self.ChessGameLogic.removeMovesThatWillPutYouInCheck(self.ChessGameLogic.findPossibleMovesBishop(self.CurrentPieceCoordinance),self.CurrentPieceCoordinance);
+					PossibleMovesBishop = self.ChessGameLogic.removeMovesThatWillPutYouInCheck(self.ChessGameLogic.findPossibleMovesBishop(self.CurrentPieceCoordinate),self.CurrentPieceCoordinate);
 					for Move in PossibleMovesBishop:
 						try:
-							NextX = int(self.findCoordinance(x,y)[0]);
-							NextY = int(self.findCoordinance(x,y)[1]);
+							NextX = int(self.findCoordinate(x,y)[0]);
+							NextY = int(self.findCoordinate(x,y)[1]);
 							m0 = int(Move[0]);
 							m1 = int(Move[2]);
 							if NextX == m0 and NextY == m1:
-								newPostion = self.CoordinanceToBoardPostion(m0,m1);
-								Bishop.center_x = newPostion[0];
-								Bishop.center_y = newPostion[1];
+								newPosition = self.CoordinateToBoardPosition(m0,m1);
+								Bishop.center_x = newPosition[0];
+								Bishop.center_y = newPosition[1];
 								goodMove = True;
-								self.ChessGameLogic.setChessPieces(m0,m1,self.ChessGameLogic.returnChessPieces(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1]));
-								self.ChessGameLogic.setChessPieces(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1], "sp");
+								self.ChessGameLogic.setChessPieces(m0,m1,self.ChessGameLogic.returnChessPieces(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1]));
+								self.ChessGameLogic.setChessPieces(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1], "sp");
 								self.ChessGameLogic.printBoard();
 								self.HitTestBlackOnWhite(Bishop);
 								self.changeTurn();
 						except:
 							None;		
 				if goodMove == False:
-					resetMove = self.CoordinanceToBoardPostion(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1]);
+					resetMove = self.CoordinateToBoardPosition(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1]);
 					Bishop.center_x = resetMove[0];
 					Bishop.center_y = resetMove[1];
 			self.count = self.count+1;
@@ -579,33 +500,34 @@ class ChessGame(arcade.Window):
 	def MoveRook(self,x,y,Rook_list,Rook_Select_list):
 		for Rook in Rook_list:
 			goodMove = False; 
-			if x >= Rook.boundary_left and x <= Rook.boundary_right and y <= Rook.boundary_top and y >= Rook.boundary_bottom:
+			if Rook.collides_with_point((x, y)):
 				if Rook_Select_list[self.count] == False:
+					self._clear_all_selections();
 					Rook_Select_list[self.count] = True;
-					self.CurrentPieceCoordinance = self.findCoordinance(x,y);
+					self.CurrentPieceCoordinate = self.findCoordinate(x,y);
 				else:
 					Rook_Select_list[self.count] = False;
-					PossibleMovesRook = self.ChessGameLogic.removeMovesThatWillPutYouInCheck(self.ChessGameLogic.findPossibleMovesRook(self.CurrentPieceCoordinance),self.CurrentPieceCoordinance);
+					PossibleMovesRook = self.ChessGameLogic.removeMovesThatWillPutYouInCheck(self.ChessGameLogic.findPossibleMovesRook(self.CurrentPieceCoordinate),self.CurrentPieceCoordinate);
 					for Move in PossibleMovesRook:
 						try:
-							NextX = int(self.findCoordinance(x,y)[0]);
-							NextY = int(self.findCoordinance(x,y)[1]);
+							NextX = int(self.findCoordinate(x,y)[0]);
+							NextY = int(self.findCoordinate(x,y)[1]);
 							m0 = int(Move[0]);
 							m1 = int(Move[2]);
 							if NextX == m0 and NextY == m1:
-								newPostion = self.CoordinanceToBoardPostion(m0,m1);
-								Rook.center_x = newPostion[0];
-								Rook.center_y = newPostion[1];
+								newPosition = self.CoordinateToBoardPosition(m0,m1);
+								Rook.center_x = newPosition[0];
+								Rook.center_y = newPosition[1];
 								goodMove = True;
-								self.ChessGameLogic.setChessPieces(m0,m1,self.ChessGameLogic.returnChessPieces(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1]));
-								self.ChessGameLogic.setChessPieces(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1], "sp");
+								self.ChessGameLogic.setChessPieces(m0,m1,self.ChessGameLogic.returnChessPieces(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1]));
+								self.ChessGameLogic.setChessPieces(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1], "sp");
 								self.ChessGameLogic.printBoard();
 								self.HitTestBlackOnWhite(Rook);
 								self.changeTurn();
 						except:
 							None;		
 				if goodMove == False:
-					resetMove = self.CoordinanceToBoardPostion(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1]);
+					resetMove = self.CoordinateToBoardPosition(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1]);
 					Rook.center_x = resetMove[0];
 					Rook.center_y = resetMove[1];
 			self.count = self.count+1;
@@ -614,33 +536,34 @@ class ChessGame(arcade.Window):
 	def MoveKing(self,x,y,King_list,King_Select_list):
 		goodMove = False; 
 		for King in King_list:
-			if x >= King.boundary_left and x <= King.boundary_right and y <= King.boundary_top and y >= King.boundary_bottom:
+			if King.collides_with_point((x, y)):
 				if King_Select_list[self.count] == False:
+					self._clear_all_selections();
 					King_Select_list[self.count] = True;
-					self.CurrentPieceCoordinance = self.findCoordinance(x,y);
+					self.CurrentPieceCoordinate = self.findCoordinate(x,y);
 				else:
 					King_Select_list[self.count] = False;
-					PossibleMovesKing = self.ChessGameLogic.removeMovesThatWillPutYouInCheck(self.ChessGameLogic.findPossibleMovesKing(self.CurrentPieceCoordinance),self.CurrentPieceCoordinance);
+					PossibleMovesKing = self.ChessGameLogic.removeMovesThatWillPutYouInCheck(self.ChessGameLogic.findPossibleMovesKing(self.CurrentPieceCoordinate),self.CurrentPieceCoordinate);
 					for Move in PossibleMovesKing:
 						try:
-							NextX = int(self.findCoordinance(x,y)[0]);
-							NextY = int(self.findCoordinance(x,y)[1]);
+							NextX = int(self.findCoordinate(x,y)[0]);
+							NextY = int(self.findCoordinate(x,y)[1]);
 							m0 = int(Move[0]);
 							m1 = int(Move[2]);
 							if NextX == m0 and NextY == m1:
-								newPostion = self.CoordinanceToBoardPostion(m0,m1);
-								King.center_x = newPostion[0];
-								King.center_y = newPostion[1];
+								newPosition = self.CoordinateToBoardPosition(m0,m1);
+								King.center_x = newPosition[0];
+								King.center_y = newPosition[1];
 								goodMove = True;
-								self.ChessGameLogic.setChessPieces(m0,m1,self.ChessGameLogic.returnChessPieces(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1]));
-								self.ChessGameLogic.setChessPieces(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1], "sp");
+								self.ChessGameLogic.setChessPieces(m0,m1,self.ChessGameLogic.returnChessPieces(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1]));
+								self.ChessGameLogic.setChessPieces(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1], "sp");
 								self.ChessGameLogic.printBoard();
 								self.HitTestBlackOnWhite(King);
 								self.changeTurn();
 						except:
 							None;		
 				if goodMove == False:
-					resetMove = self.CoordinanceToBoardPostion(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1]);
+					resetMove = self.CoordinateToBoardPosition(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1]);
 					King.center_x = resetMove[0];
 					King.center_y = resetMove[1];
 			self.count = self.count+1;
@@ -649,40 +572,41 @@ class ChessGame(arcade.Window):
 	def MoveQueen(self,x,y,Queen_list,Queen_Select_list):
 		goodMove = False; 
 		for Queen in Queen_list:
-			if x >= Queen.boundary_left and x <= Queen.boundary_right and y <= Queen.boundary_top and y >= Queen.boundary_bottom:
+			if Queen.collides_with_point((x, y)):
 				if Queen_Select_list[self.count] == False:
 					#print("assshit");
+					self._clear_all_selections();
 					Queen_Select_list[self.count] = True;
-					self.CurrentPieceCoordinance = self.findCoordinance(x,y);
+					self.CurrentPieceCoordinate = self.findCoordinate(x,y);
 				else:
 					Queen_Select_list[self.count] = False;
-					PossibleMovesQueen = self.ChessGameLogic.removeMovesThatWillPutYouInCheck(self.ChessGameLogic.findPossibleMovesQueen(self.CurrentPieceCoordinance),self.CurrentPieceCoordinance);
+					PossibleMovesQueen = self.ChessGameLogic.removeMovesThatWillPutYouInCheck(self.ChessGameLogic.findPossibleMovesQueen(self.CurrentPieceCoordinate),self.CurrentPieceCoordinate);
 					for Move in PossibleMovesQueen:
 						try:
-							NextX = int(self.findCoordinance(x,y)[0]);
-							NextY = int(self.findCoordinance(x,y)[1]);
+							NextX = int(self.findCoordinate(x,y)[0]);
+							NextY = int(self.findCoordinate(x,y)[1]);
 							m0 = int(Move[0]);
 							m1 = int(Move[2]);
 							if NextX == m0 and NextY == m1:
-								newPostion = self.CoordinanceToBoardPostion(m0,m1);
-								Queen.center_x = newPostion[0];
-								Queen.center_y = newPostion[1];
+								newPosition = self.CoordinateToBoardPosition(m0,m1);
+								Queen.center_x = newPosition[0];
+								Queen.center_y = newPosition[1];
 								goodMove = True;
-								self.ChessGameLogic.setChessPieces(m0,m1,self.ChessGameLogic.returnChessPieces(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1]));
-								self.ChessGameLogic.setChessPieces(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1], "sp");
+								self.ChessGameLogic.setChessPieces(m0,m1,self.ChessGameLogic.returnChessPieces(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1]));
+								self.ChessGameLogic.setChessPieces(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1], "sp");
 								self.ChessGameLogic.printBoard();
 								self.HitTestBlackOnWhite(Queen);
 								self.changeTurn();
 						except:
 							None;		
 				if goodMove == False:
-					resetMove = self.CoordinanceToBoardPostion(self.CurrentPieceCoordinance[0],self.CurrentPieceCoordinance[1]);
+					resetMove = self.CoordinateToBoardPosition(self.CurrentPieceCoordinate[0],self.CurrentPieceCoordinate[1]);
 					Queen.center_x = resetMove[0];
 					Queen.center_y = resetMove[1];
 			self.count = self.count+1;
 		self.count = 0;	
 	
-	def findCoordinance(self,center_x,center_y):
+	def findCoordinate(self,center_x,center_y):
 		x=0;	
 		y=0;
 		if center_x-75 >= 0:
@@ -715,7 +639,7 @@ class ChessGame(arcade.Window):
 			y=y+1;
 		return [x,y];
 
-	def CoordinanceToBoardPostion(self,x,y):
+	def CoordinateToBoardPosition(self,x,y):
 		center_x = (x*75)+35;
 		center_y = (y*75)+35;
 		return [center_x,center_y];
@@ -730,10 +654,6 @@ class ChessGame(arcade.Window):
 				B_Queen = arcade.Sprite("B_Queen_img.jpg",self.chessPieces_scaling);
 				B_Queen.center_x = (i*75)+35;
 				B_Queen.center_y = 35;
-				B_Queen.boundary_left = B_Queen.center_x-(B_Queen.width/2); 
-				B_Queen.boundary_right = B_Queen.center_x+(B_Queen.width/2);
-				B_Queen.boundary_top = B_Queen.center_y+(B_Queen.height/2);
-				B_Queen.boundary_bottom = B_Queen.center_y-(B_Queen.height/2);
 				self.B_Queen_list.append(B_Queen);
 				return True;
 			if self.ChessGameLogic.returnChessPieces(i,7) == "p1":
@@ -743,10 +663,6 @@ class ChessGame(arcade.Window):
 				Queen = arcade.Sprite("Queen_img.jpg",self.chessPieces_scaling);
 				Queen.center_x = (i*75)+35;
 				Queen.center_y = 560;
-				Queen.boundary_left = Queen.center_x-(Queen.width/2); 
-				Queen.boundary_right = Queen.center_x+(Queen.width/2);
-				Queen.boundary_top = Queen.center_y+(Queen.height/2);
-				Queen.boundary_bottom = Queen.center_y-(Queen.height/2);
 				self.Queen_list.append(Queen);
 				return True;
 		return False;
@@ -826,7 +742,11 @@ class ChessGame(arcade.Window):
 				self.B_Rook_list[sub_counter].center_y = y;
 			sub_counter=sub_counter+1;	
 def main():
-	game = ChessGame(600, 600);
+	try:
+		difficulty = input("Enter The Difficulty Level: ");
+	except EOFError:
+		difficulty = "";
+	game = ChessGame(600, 600, difficulty);
 	game.setup();
 	arcade.run();
 
