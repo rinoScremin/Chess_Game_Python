@@ -66,6 +66,8 @@ class ChessGame(arcade.Window):
 		self.count = 0;
 		
 		self.playersTurn = "white"; 
+		self.selected_piece_kind = None;
+		self.selected_piece_index = None;
 		
 	@staticmethod
 	def _parse_difficulty(value):
@@ -93,25 +95,25 @@ class ChessGame(arcade.Window):
 
 		self.King_list = arcade.SpriteList();
 		King = arcade.Sprite("King_img.jpg",self.chessPieces_scaling);
-		King.center_x = 335;
+		King.center_x = 260;
 		King.center_y = 35;
 		self.King_list.append(King);
 
 		self.B_King_list = arcade.SpriteList();
 		B_King = arcade.Sprite("B_King_img.jpg",self.chessPieces_scaling);
-		B_King.center_x = 335;
+		B_King.center_x = 260;
 		B_King.center_y = 560;
 		self.B_King_list.append(B_King);
 
 		self.Queen_list = arcade.SpriteList();	
 		Queen = arcade.Sprite("Queen_img.jpg",self.chessPieces_scaling);
-		Queen.center_x = 260;
+		Queen.center_x = 335;
 		Queen.center_y = 35;
 		self.Queen_list.append(Queen);
 
 		self.B_Queen_list = arcade.SpriteList();	
 		B_Queen = arcade.Sprite("B_Queen_img.jpg",self.chessPieces_scaling);
-		B_Queen.center_x = 260;
+		B_Queen.center_x = 335;
 		B_Queen.center_y = 560;
 		self.B_Queen_list.append(B_Queen);
 		
@@ -219,6 +221,31 @@ class ChessGame(arcade.Window):
 	
 	def on_mouse_press(self, x, y, button, modifiers):
 		self.mouse_current_state = True;
+		if self.playersTurn != "white":
+			return;
+		selection = self._find_white_piece_at_point(x, y);
+		if selection is None:
+			self._clear_all_selections();
+			self.selected_piece_kind = None;
+			self.selected_piece_index = None;
+			return;
+		kind, index = selection;
+		self._clear_all_selections();
+		self.selected_piece_kind = kind;
+		self.selected_piece_index = index;
+		if kind == "king":
+			self.King_Select_list[index] = True;
+		elif kind == "queen":
+			self.Queen_Select_list[index] = True;
+		elif kind == "rook":
+			self.Rook_Select_list[index] = True;
+		elif kind == "knight":
+			self.Knight_Select_list[index] = True;
+		elif kind == "bishop":
+			self.Bishop_Select_list[index] = True;
+		elif kind == "pawn":
+			self.Pawn_Select_list[index] = True;
+		self.CurrentPieceCoordinate = self.findCoordinate(x,y);
 
 	def changeTurn(self):
 		if self.playersTurn == "white":
@@ -231,17 +258,28 @@ class ChessGame(arcade.Window):
 	def on_mouse_release(self, x, y, button, modifiers):
 		self.mouse_current_state = False;
 		if self.HitTestWhiteOnWhite(self.Queen_list) or self.HitTestWhiteOnWhite(self.King_list) or self.HitTestWhiteOnWhite(self.Knight_list) or self.HitTestWhiteOnWhite(self.Pawn_list) or self.HitTestWhiteOnWhite(self.Bishop_list) or self.HitTestWhiteOnWhite(self.Rook_list):
-			None;
-		else:
-			if self.playersTurn == "white":
-				print();
-				print("PLAYER 1 CHESS MOVE");
+			self._clear_all_selections();
+			self.selected_piece_kind = None;
+			self.selected_piece_index = None;
+			return;
+		if self.playersTurn == "white" and self.selected_piece_kind is not None:
+			print();
+			print("PLAYER 1 CHESS MOVE");
+			if self.selected_piece_kind == "queen":
 				self.MoveQueen(x,y, self.Queen_list, self.Queen_Select_list);
+			elif self.selected_piece_kind == "pawn":
 				self.MovePawn(x,y, self.Pawn_list, self.Pawn_Select_list);
+			elif self.selected_piece_kind == "knight":
 				self.MoveKnight(x,y, self.Knight_list, self.Knight_Select_list);
+			elif self.selected_piece_kind == "bishop":
 				self.MoveBishop(x,y, self.Bishop_list,self.Bishop_Select_list);
+			elif self.selected_piece_kind == "rook":
 				self.MoveRook(x,y, self.Rook_list,self.Rook_Select_list);
+			elif self.selected_piece_kind == "king":
 				self.MoveKing(x,y, self.King_list, self.King_Select_list);
+		self._clear_all_selections();
+		self.selected_piece_kind = None;
+		self.selected_piece_index = None;
 
 	def _clear_all_selections(self):
 		for i in range(len(self.King_Select_list)):
@@ -256,6 +294,27 @@ class ChessGame(arcade.Window):
 			self.Bishop_Select_list[i] = False;
 		for i in range(len(self.Pawn_Select_list)):
 			self.Pawn_Select_list[i] = False;
+
+	def _find_white_piece_at_point(self, x, y):
+		for index, piece in enumerate(self.King_list):
+			if piece.collides_with_point((x, y)):
+				return ("king", index);
+		for index, piece in enumerate(self.Queen_list):
+			if piece.collides_with_point((x, y)):
+				return ("queen", index);
+		for index, piece in enumerate(self.Rook_list):
+			if piece.collides_with_point((x, y)):
+				return ("rook", index);
+		for index, piece in enumerate(self.Knight_list):
+			if piece.collides_with_point((x, y)):
+				return ("knight", index);
+		for index, piece in enumerate(self.Bishop_list):
+			if piece.collides_with_point((x, y)):
+				return ("bishop", index);
+		for index, piece in enumerate(self.Pawn_list):
+			if piece.collides_with_point((x, y)):
+				return ("pawn", index);
+		return None;
 
 	def _collides_with_other(self, sprite, sprite_list):
 		collisions = arcade.check_for_collision_with_list(sprite, sprite_list);
@@ -669,78 +728,26 @@ class ChessGame(arcade.Window):
 
 
 	def on_mouse_motion(self, x, y, dx, dy):
-		sub_counter=0;
-		for Selected_King in self.King_Select_list:
-			if Selected_King:
-				self.King_list[sub_counter].center_x = x;
-				self.King_list[sub_counter].center_y = y;
-			sub_counter=sub_counter+1;
-		sub_counter=0;	
-		for Selected_King in self.B_King_Select_list:
-			if Selected_King:
-				self.B_King_list[sub_counter].center_x = x;
-				self.B_King_list[sub_counter].center_y = y;
-			sub_counter=sub_counter+1;
-		sub_counter=0;
-		for Selected_Queen in self.Queen_Select_list:
-			if Selected_Queen:
-				self.Queen_list[sub_counter].center_x = x;
-				self.Queen_list[sub_counter].center_y = y;
-			sub_counter=sub_counter+1;
-		sub_counter=0;	
-		for Selected_Queen in self.B_Queen_Select_list:
-			if Selected_Queen:
-				self.B_Queen_list[sub_counter].center_x = x;
-				self.B_Queen_list[sub_counter].center_y = y;
-			sub_counter=sub_counter+1;
-		sub_counter=0;
-		for Selected_Pawn in self.Pawn_Select_list:
-			if Selected_Pawn:
-				self.Pawn_list[sub_counter].center_x = x;
-				self.Pawn_list[sub_counter].center_y = y;
-			sub_counter=sub_counter+1;
-		sub_counter=0;
-		for Selected_Pawn in self.B_Pawn_Select_list:
-			if Selected_Pawn:
-				self.B_Pawn_list[sub_counter].center_x = x;
-				self.B_Pawn_list[sub_counter].center_y = y;
-			sub_counter=sub_counter+1;
-		sub_counter=0;
-		for Selected_Bishop in self.Bishop_Select_list:
-			if Selected_Bishop:
-				self.Bishop_list[sub_counter].center_x = x;
-				self.Bishop_list[sub_counter].center_y = y;
-			sub_counter=sub_counter+1;
-		sub_counter=0;
-		for Selected_B_Bishop in self.B_Bishop_Select_list:
-			if Selected_B_Bishop:
-				self.B_Bishop_list[sub_counter].center_x = x;
-				self.B_Bishop_list[sub_counter].center_y = y;
-			sub_counter=sub_counter+1;
-		sub_counter=0;
-		for Selected_Knight in self.Knight_Select_list:
-			if Selected_Knight:
-				self.Knight_list[sub_counter].center_x = x;
-				self.Knight_list[sub_counter].center_y = y;
-			sub_counter=sub_counter+1;
-		sub_counter=0;
-		for Selected_Knight in self.B_Knight_Select_list:
-			if Selected_Knight:
-				self.B_Knight_list[sub_counter].center_x = x;
-				self.B_Knight_list[sub_counter].center_y = y;
-			sub_counter=sub_counter+1;
-		sub_counter=0;
-		for Selected_Rook in self.Rook_Select_list:
-			if Selected_Rook:
-				self.Rook_list[sub_counter].center_x = x;
-				self.Rook_list[sub_counter].center_y = y;
-			sub_counter=sub_counter+1;
-		sub_counter=0;
-		for Selected_Rook in self.B_Rook_Select_list:
-			if Selected_Rook:
-				self.B_Rook_list[sub_counter].center_x = x;
-				self.B_Rook_list[sub_counter].center_y = y;
-			sub_counter=sub_counter+1;	
+		if self.selected_piece_kind is None or self.selected_piece_index is None:
+			return;
+		if self.selected_piece_kind == "king":
+			self.King_list[self.selected_piece_index].center_x = x;
+			self.King_list[self.selected_piece_index].center_y = y;
+		elif self.selected_piece_kind == "queen":
+			self.Queen_list[self.selected_piece_index].center_x = x;
+			self.Queen_list[self.selected_piece_index].center_y = y;
+		elif self.selected_piece_kind == "rook":
+			self.Rook_list[self.selected_piece_index].center_x = x;
+			self.Rook_list[self.selected_piece_index].center_y = y;
+		elif self.selected_piece_kind == "knight":
+			self.Knight_list[self.selected_piece_index].center_x = x;
+			self.Knight_list[self.selected_piece_index].center_y = y;
+		elif self.selected_piece_kind == "bishop":
+			self.Bishop_list[self.selected_piece_index].center_x = x;
+			self.Bishop_list[self.selected_piece_index].center_y = y;
+		elif self.selected_piece_kind == "pawn":
+			self.Pawn_list[self.selected_piece_index].center_x = x;
+			self.Pawn_list[self.selected_piece_index].center_y = y;
 def main():
 	try:
 		difficulty = input("Enter The Difficulty Level: ");
