@@ -1,107 +1,166 @@
 from ChessGameRules import chessGameRules
 from copy import copy, deepcopy
+import time
+import multiprocessing as mp
 
 class chessGameAI:
-
 	AIgame = chessGameRules();
 	chessScore = 0;
 	chessBoardCopy=None;
 	maxScore = 0;
 	minScore = 0;
 
+	def __init__(self):
+		self.AIgame = chessGameRules();
+		self._transposition = {};
+		self._node_count = 0;
+
+	def _iter_moves(self, player):
+		if player == "black":
+			allMoves = self.generateMovesBlack();
+		else:
+			allMoves = self.generateMovesWhite();
+		for moves in allMoves:
+			from_pos = moves[len(moves)-1];
+			fx = from_pos[0];
+			fy = from_pos[1];
+			for i in range(len(moves)-1):
+				tx = int(moves[i][0]);
+				ty = int(moves[i][2]);
+				yield fx, fy, tx, ty;
+
+	def _piece_value(self, piece):
+		if piece == "sp":
+			return 0;
+		p = piece[0];
+		if p == "p":
+			return 1;
+		if p == "n" or p == "b":
+			return 3;
+		if p == "r":
+			return 5;
+		if p == "q":
+			return 9;
+		if p == "k":
+			return 100;
+		return 0;
+
+	def _ordered_moves(self, player):
+		moves = [];
+		for fx, fy, tx, ty in self._iter_moves(player):
+			captured = self.AIgame.returnChessPieces(tx, ty);
+			moves.append((self._piece_value(captured), fx, fy, tx, ty));
+		moves.sort(key=lambda m: m[0], reverse=True);
+		for _, fx, fy, tx, ty in moves:
+			yield fx, fy, tx, ty;
+
+	def _make_move(self, fx, fy, tx, ty):
+		moving = self.AIgame.returnChessPieces(fx, fy);
+		captured = self.AIgame.returnChessPieces(tx, ty);
+		self.AIgame.setChessPieces(tx, ty, moving);
+		self.AIgame.setChessPieces(fx, fy, "sp");
+		return moving, captured;
+
+	def _undo_move(self, fx, fy, tx, ty, moving, captured):
+		self.AIgame.setChessPieces(fx, fy, moving);
+		self.AIgame.setChessPieces(tx, ty, captured);
+
+	def _hash_board(self, board, player):
+		return (player, tuple(cell[0] for row in board for cell in row));
+
 	
 	def generateMovesWhite(self):
-		allPeacesMoves=[];
+		allPiecesMoves=[];
 		z=[7,6,5,4,3,2,1,0];
 		index = 0;
 		for x in range(0,8):
 			for y in range(0,8):
-				chessPeace = self.AIgame.chessBoard[x][y][0];
+				chessPiece = self.AIgame.chessBoard[x][y][0];
 				tempMove = [y,z[int(x)]];
 
-				if chessPeace == "r1": 
+				if chessPiece == "r1": 
 					temp = self.AIgame.findPossibleMovesRook(tempMove);
 					if temp[0] != "e":
 						temp.append(tempMove);
-						allPeacesMoves.append(temp);
+						allPiecesMoves.append(temp);
 
-				if chessPeace == "p1": 
+				if chessPiece == "p1": 
 					temp = self.AIgame.findPossibleMovesPawn(tempMove, False);
 					if temp[0] != "e":
 						temp.append(tempMove);
-						allPeacesMoves.append(temp);
+						allPiecesMoves.append(temp);
 
-				if chessPeace == "n1": 
+				if chessPiece == "n1": 
 					temp = self.AIgame.findPossibleMovesKnight(tempMove);
 					if temp[0] != "e":
 						temp.append(tempMove);
-						allPeacesMoves.append(temp);
+						allPiecesMoves.append(temp);
 
-				if chessPeace == "b1": 
+				if chessPiece == "b1": 
 					temp = self.AIgame.findPossibleMovesBishop(tempMove);
 					if temp[0] != "e":
 						temp.append(tempMove);
-						allPeacesMoves.append(temp);
+						allPiecesMoves.append(temp);
 
-				if chessPeace == "k1": 
+				if chessPiece == "k1": 
 					temp = self.AIgame.findPossibleMovesKing(tempMove);
 					if temp[0] != "e":
 						temp.append(tempMove);
-						allPeacesMoves.append(temp);
+						allPiecesMoves.append(temp);
 
-				if chessPeace == "q1": 
+				if chessPiece == "q1": 
 					temp = self.AIgame.findPossibleMovesQueen(tempMove);
 					if temp[0] != "e":
 						temp.append(tempMove);
-						allPeacesMoves.append(temp);
-		return allPeacesMoves;
+						allPiecesMoves.append(temp);
+		return allPiecesMoves;
 
 	def generateMovesBlack(self):
-		allPeacesMoves=[];
+		allPiecesMoves=[];
 		z=[7,6,5,4,3,2,1,0];
 		index = 0;
 		for x in range(0,8):
 			for y in range(0,8):
-				chessPeace = self.AIgame.chessBoard[x][y][0];
+				chessPiece = self.AIgame.chessBoard[x][y][0];
 				tempMove = [y,z[int(x)]];
 
-				if chessPeace == "r2": 
+				if chessPiece == "r2": 
 					temp = self.AIgame.findPossibleMovesRook(tempMove);
 					if temp[0] != "e":
 						temp.append(tempMove);
-						allPeacesMoves.append(temp);
+						allPiecesMoves.append(temp);
 
-				if chessPeace == "p2": 
+				if chessPiece == "p2": 
 					temp = self.AIgame.findPossibleMovesPawn(tempMove, False);
 					if temp[0] != "e":
 						temp.append(tempMove);
-						allPeacesMoves.append(temp);
+						allPiecesMoves.append(temp);
 
-				if chessPeace == "n2": 
+				if chessPiece == "n2": 
 					temp = self.AIgame.findPossibleMovesKnight(tempMove);
 					if temp[0] != "e":
 						temp.append(tempMove);
-						allPeacesMoves.append(temp);
+						allPiecesMoves.append(temp);
 
-				if chessPeace == "b2": 
+				if chessPiece == "b2": 
 					temp = self.AIgame.findPossibleMovesBishop(tempMove);
 					if temp[0] != "e":
 						temp.append(tempMove);
-						allPeacesMoves.append(temp);
+						allPiecesMoves.append(temp);
 
-				if chessPeace == "k2": 
+				if chessPiece == "k2": 
 					temp = self.AIgame.findPossibleMovesKing(tempMove);
 					if temp[0] != "e":
 						temp.append(tempMove);
-						allPeacesMoves.append(temp);
+						allPiecesMoves.append(temp);
 
-				if chessPeace == "q2": 
+				if chessPiece == "q2": 
 					temp = self.AIgame.findPossibleMovesQueen(tempMove);
 					if temp[0] != "e":
 						temp.append(tempMove);
-						allPeacesMoves.append(temp);
+						allPiecesMoves.append(temp);
 		#self.AIgame.printBoard();
-		return allPeacesMoves;
+		return allPiecesMoves;
 
 
 	def PositionEvaluation(self):
@@ -210,6 +269,8 @@ class chessGameAI:
 			allMoves = self.generateMovesBlack();
 		else:
 			allMoves = self.generateMovesWhite();
+		if not allMoves:
+			return None;
 		ratedMoves=[];
 		#self.chessBoardCopy = deepcopy(self.AIgame.chessBoard);
 		for moves in allMoves:
@@ -226,6 +287,8 @@ class chessGameAI:
 				self.AIgame.setChessPieces(moves[len(moves)-1][0],moves[len(moves)-1][1],p);
 		#self.AIgame.printBoard();
 
+		if not ratedMoves:
+			return None;
 		ScoreList = [];
 		bestScore = 0;
 		for moves in ratedMoves:
@@ -271,104 +334,95 @@ class chessGameAI:
 		return ratedMoves
 
 
-	def minimax(self, state, depth, alpha, beta, player):
-		self.AIgame.chessBoard = state;
-		bestMovelist = [];
-		scoreList = [];
-		bestMove = None;
-		chessBoardCopy = deepcopy(self.AIgame.chessBoard);
-		newGameMoves = None;
-
+	def _minimax(self, depth, alpha, beta, player, deadline):
+		self._node_count = self._node_count + 1;
+		if deadline is not None and time.perf_counter() >= deadline:
+			return [None, None, [self.PositionEvaluation()]];
 		if depth == 0:
-			return bestMove;
+			return [None, None, [self.PositionEvaluation()]];
 
-		if player:	
-			newGameMoves = self.generateBoards("white");
-		else:
-			newGameMoves = self.generateBoards("black");
+		key = (depth, self._hash_board(self.AIgame.chessBoard, player));
+		if key in self._transposition:
+			return self._transposition[key];
 
 		if player:
-			for i in range(len(newGameMoves)):
-				self.AIgame.chessBoard = newGameMoves[i][0];
-				score = self.PositionEvaluation();
-				try:
-					player=False;
-					score = self.minimax(self.AIgame.chessBoard, depth - 1, alpha, beta, player)[2][0];
-					bestMovelist.append([newGameMoves[i][1], newGameMoves[i][2], [score]]);
-					scoreList.append(score);
-					bestScore = max(scoreList);
-					bestMove = bestMovelist[scoreList.index(bestScore)];
-				except:
-					bestMovelist.append([newGameMoves[i][1], newGameMoves[i][2], [score]]);
-					scoreList.append(score);
-					bestScore = max(scoreList);
-					bestMove = bestMovelist[scoreList.index(bestScore)];
+			bestScore = -99999;
+			bestMove = None;
+			for fx, fy, tx, ty in self._ordered_moves("white"):
+				moving, captured = self._make_move(fx, fy, tx, ty);
+				score = self._minimax(depth - 1, alpha, beta, False, deadline)[2][0];
+				self._undo_move(fx, fy, tx, ty, moving, captured);
+				if score > bestScore or bestMove is None:
+					bestScore = score;
+					bestMove = [[fx, fy], [tx, ty], [score]];
 				alpha = max(alpha, score);
 				if beta <= alpha:
-					break
-			return bestMove;
+					break;
 		else:
-			for i in range(len(newGameMoves)):
-				self.AIgame.chessBoard = newGameMoves[i][0];
-				score = self.PositionEvaluation();
-				try:
-					player=True;
-					score = self.minimax(self.AIgame.chessBoard, depth - 1, alpha, beta, player)[2][0];
-					bestMovelist.append([newGameMoves[i][1], newGameMoves[i][2], [score]]);
-					scoreList.append(score);
-					bestScore = min(scoreList);
-					bestMove = bestMovelist[scoreList.index(bestScore)];
-				except:
-					bestMovelist.append([newGameMoves[i][1], newGameMoves[i][2], [score]]);
-					scoreList.append(score);
-					bestScore = min(scoreList);
-					bestMove = bestMovelist[scoreList.index(bestScore)];
-
+			bestScore = 99999;
+			bestMove = None;
+			for fx, fy, tx, ty in self._ordered_moves("black"):
+				moving, captured = self._make_move(fx, fy, tx, ty);
+				score = self._minimax(depth - 1, alpha, beta, True, deadline)[2][0];
+				self._undo_move(fx, fy, tx, ty, moving, captured);
+				if score < bestScore or bestMove is None:
+					bestScore = score;
+					bestMove = [[fx, fy], [tx, ty], [score]];
 				beta = min(beta, score);
 				if beta <= alpha:
-					break
-			return bestMove;
+					break;
+
+		self._transposition[key] = bestMove;
+		return bestMove;
+
+	def minimax(self, state, depth, alpha, beta, player):
+		self.AIgame.chessBoard = state;
+		return self._minimax(depth, alpha, beta, player, None);
+
+	def search_best_move(self, state, player, max_depth, time_limit=1.0, use_multiprocessing=False):
+		self.AIgame.chessBoard = state;
+		self._transposition = {};
+		self._node_count = 0;
+		deadline = None;
+		if time_limit is not None:
+			deadline = time.perf_counter() + time_limit;
+
+		best_move = None;
+		for depth in range(1, max_depth + 1):
+			if deadline is not None and time.perf_counter() >= deadline:
+				break;
+			if use_multiprocessing and deadline is None and depth == max_depth:
+				best_move = self._search_root_multiprocessing(player, depth);
+			else:
+				best_move = self._minimax(depth, -9999, 9999, player == "white", deadline);
+			if best_move is None:
+				break;
+		return best_move;
+
+	def _search_root_multiprocessing(self, player, depth):
+		moves = list(self._ordered_moves(player));
+		if not moves:
+			return None;
+		args = [];
+		for fx, fy, tx, ty in moves:
+			args.append((deepcopy(self.AIgame.chessBoard), (fx, fy, tx, ty), depth - 1, player == "black"));
+		with mp.Pool() as pool:
+			results = pool.map(_evaluate_root_move, args);
+		if player == "white":
+			best = max(results, key=lambda r: r[1]);
+		else:
+			best = min(results, key=lambda r: r[1]);
+		(fx, fy, tx, ty), score = best;
+		return [[fx, fy], [tx, ty], [score]];
 
 
 
-
-			
-				
-		
-
-#chessBoard = [[["r2",0],["sp",0],["b2",0],["q2",0],["k2",0],["b2",0],["sp",0],["r2",0]],
-#	[["p2",1],["p2",1],["p2",1],["p2",1],["p2",1],["p2",1],["p2",1],["p2",1]],
-#	[["sp",0],["sp",0],["n2",0],["sp",0],["sp",0],["sp",0],["sp",0],["sp",0]],
-#	[["sp",0],["sp",0],["sp",0],["p1",0],["sp",0],["sp",0],["sp",0],["sp",0]],
-#	[["sp",0],["sp",0],["sp",0],["sp",0],["sp",0],["sp",0],["sp",0],["sp",0]],
-#	[["sp",0],["n2",0],["p1",0],["sp",0],["sp",0],["sp",0],["sp",0],["sp",0]],
-#	[["p1",1],["p1",1],["sp",1],["sp",1],["p1",1],["p1",1],["p1",1],["p1",1]],
-#	[["r1",0],["n1",0],["b1",0],["q1",0],["k1",0],["b1",0],["n1",0],["r1",0]]];		
-			
-
-#test = chessGameAI();
-#test.AIgame.chessBoard = chessBoard;
-#print(test.PositionEvaluation());
-
-#test.AIgame.chessBoard = chessBoard;
-#i=0;
-#for moves in test.generateBoards("black"):
-#	i=i+1;
-#	print(moves[3][0], "list # : " ,i);
-#	test.AIgame.chessBoard = moves[0];
-#	test.AIgame.printBoard();
-
-
-#print(test.minimax(chessBoard,2,-9999,9999,False));
-#test.AIgame.printBoard();
-
-#print(test.minimax(test.AIgame.chessBoard,1,-9999,9999,False));
-#test.AIgame.printBoard();
-
-
-
-
-#print(test.generateBoards("black")[6]);
-#test.test(3, True);
-#print(test.calculateBestMove());
-#print(test.generateMovesBlack());
+def _evaluate_root_move(args):
+	board, move, depth, minimizing = args;
+	ai = chessGameAI();
+	ai.AIgame.chessBoard = board;
+	fx, fy, tx, ty = move;
+	moving, captured = ai._make_move(fx, fy, tx, ty);
+	score = ai._minimax(depth, -9999, 9999, not minimizing, None)[2][0];
+	ai._undo_move(fx, fy, tx, ty, moving, captured);
+	return (move, score);
